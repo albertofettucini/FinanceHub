@@ -15,20 +15,37 @@
   },
   "build": {
     "appId": "com.financehub.app",
-    "publish": "never",
     "productName": "FinanceHub",
     "copyright": "Copyright 2025 FinanceHub",
-    "directories": { "output": "dist" },
-    "files": ["main.js", "preload.js", "renderer/**/*", "assets/**/*"],
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*"
+    ],
     "win": {
       "target": [
-        { "target": "appx", "arch": ["x64"] }
+        {
+          "target": "appx",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "assets/icon.ico"
     },
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "icon": "assets/icon.png",
       "category": "public.app-category.finance",
@@ -37,7 +54,10 @@
     "dmg": {
       "title": "Finance Hub",
       "backgroundColor": "#0e0e0e",
-      "window": { "width": 540, "height": 380 }
+      "window": {
+        "width": 540,
+        "height": 380
+      }
     },
     "appx": {
       "applicationId": "FinanceHub",
@@ -46,7 +66,9 @@
       "identityName": "YusufSinaUygunpolat.FinanceHub",
       "publisher": "CN=40DEDFD8-E68C-49D7-ACAF-CEE39136FE39",
       "publisherDisplayName": "Yusuf Sina Uygunpolat",
-      "languages": ["en-US"]
+      "languages": [
+        "en-US"
+      ]
     },
     "nsis": {
       "oneClick": false,
