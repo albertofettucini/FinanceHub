@@ -341,6 +341,7 @@ async function fetchAndUpdateTickers() {
         };
         updateTickerValue(sym, q.regularMarketPrice, q.regularMarketChange, q.regularMarketChangePercent);
       });
+      showDataWarning(false); // live data OK — remove EST badge
       return; // success — stop trying fallbacks
     } catch (err) {
       console.warn(`[Ticker] ${url.includes('query1') ? 'query1' : 'query2'} failed:`, err.message);
@@ -350,6 +351,24 @@ async function fetchAndUpdateTickers() {
   // Both failed — only simulate symbols we have no real data for
   console.warn('[Ticker] All endpoints failed, using simulation for missing symbols');
   simulateTickers();
+  showDataWarning(true);
+}
+
+// Show/hide data reliability warning
+function showDataWarning(show) {
+  let dot = document.getElementById('ticker-data-warning');
+  if (show && !dot) {
+    const ticker = document.querySelector('.ticker-track');
+    if (!ticker) return;
+    dot = document.createElement('span');
+    dot.id = 'ticker-data-warning';
+    dot.title = 'Live data unavailable — showing estimated prices';
+    dot.style.cssText = 'position:absolute;top:6px;right:8px;background:#f59e0b;color:#000;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.5px;z-index:10;pointer-events:none';
+    dot.textContent = 'EST';
+    document.querySelector('.ticker-bar')?.appendChild(dot);
+  } else if (!show && dot) {
+    dot.remove();
+  }
 }
 
 function simulateTickers() {
