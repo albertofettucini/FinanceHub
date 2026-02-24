@@ -15,6 +15,7 @@
   },
   "build": {
     "appId": "com.financehub.app",
+    "publish": "never",
     "productName": "FinanceHub",
     "copyright": "Copyright 2025 FinanceHub",
     "directories": { "output": "dist" },
