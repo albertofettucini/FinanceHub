@@ -1,0 +1,59 @@
+{
+  "name": "finance-hub",
+  "version": "1.0.0",
+  "description": "All-in-one financial platform - Bloomberg, TradingView, Investing, Yahoo Finance",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "author": "FinanceHub",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.financehub.app",
+    "productName": "FinanceHub",
+    "copyright": "Copyright 2025 FinanceHub",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "renderer/**/*", "assets/**/*"],
+    "win": {
+      "target": [
+        { "target": "appx", "arch": ["x64"] }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.finance",
+      "darkModeSupport": true
+    },
+    "dmg": {
+      "title": "Finance Hub",
+      "backgroundColor": "#0e0e0e",
+      "window": { "width": 540, "height": 380 }
+    },
+    "appx": {
+      "applicationId": "FinanceHub",
+      "backgroundColor": "#1a1a2e",
+      "displayName": "Finance Hub",
+      "identityName": "YusufSinaUygunpolat.FinanceHub",
+      "publisher": "CN=40DEDFD8-E68C-49D7-ACAF-CEE39136FE39",
+      "publisherDisplayName": "Yusuf Sina Uygunpolat",
+      "languages": ["en-US"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
+    }
+  }
+}

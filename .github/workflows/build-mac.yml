@@ -1,0 +1,45 @@
+name: Build macOS DMG
+
+on:
+  workflow_dispatch:        # Manuel tetikle (Actions sekmesinden)
+  push:
+    tags:
+      - 'v*'               # v1.1 gibi tag push'larında otomatik çalışır
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build macOS DMG (x64 + arm64)
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false   # Code signing yok — ücretsiz build
+        run: |
+          npx electron-builder --mac dmg --x64
+          npx electron-builder --mac dmg --arm64
+
+      - name: Upload x64 DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: FinanceHub-macOS-x64
+          path: dist/*x64*.dmg
+          retention-days: 30
+
+      - name: Upload arm64 DMG (Apple Silicon)
+        uses: actions/upload-artifact@v4
+        with:
+          name: FinanceHub-macOS-arm64
+          path: dist/*arm64*.dmg
+          retention-days: 30
