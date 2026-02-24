@@ -87,20 +87,20 @@ const ALL_HOME_SYMBOLS = HOME_CATEGORIES.flatMap(c => c.symbols);
 const DEFAULT_IDS  = ['sp500', 'nasdaq', 'bist', 'btc'];
 const MAX_TICKERS  = 4;
 
-// Simulation fallback prices
+// Simulation fallback prices (updated Feb 2026)
 const SIM_BASES = {
-  sp500: 5870, nasdaq: 18600, dji: 43200, ftse: 7680, n225: 38500,
-  dax: 17800, bist: 9800, btc: 97500, eth: 3400, eur: 1.0820, gold: 2330, oil: 78.5,
+  sp500: 5983, nasdaq: 19400, dji: 43400, ftse: 8620, n225: 38700,
+  dax: 22000, bist: 10500, btc: 95800, eth: 2720, eur: 1.0480, gold: 2930, oil: 72.0,
 };
 const HOME_SIM_BASES = {
   // indices
-  sp500: 5870, nasdaq: 18600, dji: 43200, bist: 9800, dax: 17800, ftse: 7680, n225: 38500, hsi: 17200,
+  sp500: 5983, nasdaq: 19400, dji: 43400, bist: 10500, dax: 22000, ftse: 8620, n225: 38700, hsi: 21200,
   // crypto
-  btc: 97500, eth: 3400, bnb: 620, sol: 195, xrp: 0.58, ada: 0.45,
+  btc: 95800, eth: 2720, bnb: 630, sol: 165, xrp: 2.45, ada: 0.72,
   // forex
-  usdtry: 32.5, eurtry: 35.2, eurusd: 1.0820, gbpusd: 1.2650, usdjpy: 149.5, usdcny: 7.24,
+  usdtry: 36.2, eurtry: 37.9, eurusd: 1.0480, gbpusd: 1.2580, usdjpy: 151.2, usdcny: 7.28,
   // commodities
-  gold: 2330, silver: 27.5, oil: 78.5, brent: 82.3, gas: 2.15,
+  gold: 2930, silver: 32.5, oil: 72.0, brent: 76.1, gas: 3.85,
 };
 
 // ── State ─────────────────────────────────────
@@ -310,34 +310,52 @@ function updateTickerValue(sym, price, change, pct) {
 // ══════════════════════════════════════════════
 // TICKER DATA — Yahoo Finance (all 12 symbols)
 // ══════════════════════════════════════════════
+const lastKnownTickerPrices = {};
+
 async function fetchAndUpdateTickers() {
   const syms = ALL_SYMBOLS;
-
   const symbolStr = syms.map(s => s.symbol).join(',');
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolStr)}&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent`;
+  const fields = 'regularMarketPrice,regularMarketChange,regularMarketChangePercent';
 
-  try {
-    const result = await window.electronAPI.fetchJson(url);
-    if (!result.ok) throw new Error(`HTTP ${result.status}`);
+  // Try query1 first, then query2 as fallback
+  const urls = [
+    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolStr)}&fields=${fields}`,
+    `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolStr)}&fields=${fields}`,
+  ];
 
-    const data = JSON.parse(result.text);
-    const quotes = data?.quoteResponse?.result || [];
-    if (!quotes.length) throw new Error('Empty response');
+  for (const url of urls) {
+    try {
+      const result = await window.electronAPI.fetchJson(url);
+      if (!result.ok) continue;
+      const data = JSON.parse(result.text);
+      const quotes = data?.quoteResponse?.result || [];
+      if (!quotes.length) continue;
 
-    syms.forEach(sym => {
-      const q = quotes.find(r => r.symbol === sym.symbol);
-      if (!q) return;
-      updateTickerValue(sym, q.regularMarketPrice, q.regularMarketChange, q.regularMarketChangePercent);
-    });
-  } catch (err) {
-    console.warn('[Ticker] Real data failed, using simulation:', err.message);
-    simulateTickers();
+      syms.forEach(sym => {
+        const q = quotes.find(r => r.symbol === sym.symbol);
+        if (!q || q.regularMarketPrice == null) return;
+        lastKnownTickerPrices[sym.id] = {
+          price: q.regularMarketPrice,
+          change: q.regularMarketChange,
+          pct: q.regularMarketChangePercent,
+        };
+        updateTickerValue(sym, q.regularMarketPrice, q.regularMarketChange, q.regularMarketChangePercent);
+      });
+      return; // success — stop trying fallbacks
+    } catch (err) {
+      console.warn(`[Ticker] ${url.includes('query1') ? 'query1' : 'query2'} failed:`, err.message);
+    }
   }
+
+  // Both failed — only simulate symbols we have no real data for
+  console.warn('[Ticker] All endpoints failed, using simulation for missing symbols');
+  simulateTickers();
 }
 
 function simulateTickers() {
   ALL_SYMBOLS.forEach(sym => {
-    const base = SIM_BASES[sym.id] || 100;
+    if (lastKnownTickerPrices[sym.id]) return; // never overwrite real data
+    const base   = SIM_BASES[sym.id] || 100;
     const change = (Math.random() - 0.48) * base * 0.005;
     updateTickerValue(sym, base + change, change, (change / base) * 100);
   });
@@ -966,24 +984,34 @@ function simulateMainChart(canvas) {
 // ── Live price data (chip prices) ────────────
 async function fetchHomeData() {
   const symbolStr = ALL_HOME_SYMBOLS.map(s => s.symbol).join(',');
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolStr)}&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent`;
+  const fields = 'regularMarketPrice,regularMarketChange,regularMarketChangePercent';
+  const urls = [
+    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolStr)}&fields=${fields}`,
+    `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolStr)}&fields=${fields}`,
+  ];
 
-  try {
-    const result = await window.electronAPI.fetchJson(url);
-    if (!result.ok) throw new Error(`HTTP ${result.status}`);
-    const data   = JSON.parse(result.text);
-    const quotes = data?.quoteResponse?.result || [];
-    if (!quotes.length) throw new Error('Empty');
-    ALL_HOME_SYMBOLS.forEach(sym => {
-      const q = quotes.find(r => r.symbol === sym.symbol);
-      if (q) updateHomeCard(sym, q.regularMarketPrice, q.regularMarketChange, q.regularMarketChangePercent);
-    });
-  } catch (err) {
-    console.warn('[HomeData]', err.message);
-    // Only simulate on very first load when no real data cached yet
-    // On subsequent refresh failures, keep showing last known prices (no wild jumps)
-    if (Object.keys(lastKnownPrices).length === 0) simulateHomeCards();
+  for (const url of urls) {
+    try {
+      const result = await window.electronAPI.fetchJson(url);
+      if (!result.ok) continue;
+      const data   = JSON.parse(result.text);
+      const quotes = data?.quoteResponse?.result || [];
+      if (!quotes.length) continue;
+      ALL_HOME_SYMBOLS.forEach(sym => {
+        const q = quotes.find(r => r.symbol === sym.symbol);
+        if (q && q.regularMarketPrice != null) {
+          updateHomeCard(sym, q.regularMarketPrice, q.regularMarketChange, q.regularMarketChangePercent);
+        }
+      });
+      return; // success
+    } catch (err) {
+      console.warn('[HomeData] endpoint failed:', err.message);
+    }
   }
+
+  // Both endpoints failed — only simulate on very first load
+  if (Object.keys(lastKnownPrices).length === 0) simulateHomeCards();
+  else console.warn('[HomeData] All endpoints failed, keeping last known prices');
 }
 
 function updateHomeCard(sym, price, change, pct) {
