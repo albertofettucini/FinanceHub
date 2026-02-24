@@ -312,54 +312,59 @@ function updateTickerValue(sym, price, change, pct) {
 // ══════════════════════════════════════════════
 const lastKnownTickerPrices = {};
 
-async function fetchAndUpdateTickers() {
-  const syms = ALL_SYMBOLS;
-  const symbolStr = syms.map(s => s.symbol).join(',');
-  const fields = 'regularMarketPrice,regularMarketChange,regularMarketChangePercent';
-
-  // Try query1 first, then query2 as fallback
-  const urls = [
-    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolStr)}&fields=${fields}`,
-    `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolStr)}&fields=${fields}`,
-  ];
-
-  for (const url of urls) {
+// ── Fetch a single symbol price via v8/chart (no crumb required) ──────────
+async function fetchPriceV8(sym) {
+  // Use query2 as primary (less rate-limited for chart calls), query1 as fallback
+  const hosts = ['query2', 'query1'];
+  for (const host of hosts) {
+    const url = `https://${host}.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym.symbol)}?range=5d&interval=1d&includePrePost=false`;
     try {
       const result = await window.electronAPI.fetchJson(url);
       if (!result.ok) continue;
-      const data = JSON.parse(result.text);
-      const quotes = data?.quoteResponse?.result || [];
-      if (!quotes.length) continue;
+      const json = JSON.parse(result.text);
+      const meta = json?.chart?.result?.[0]?.meta;
+      if (!meta || meta.regularMarketPrice == null) continue;
 
-      syms.forEach(sym => {
-        const q = quotes.find(r => r.symbol === sym.symbol);
-        if (!q || q.regularMarketPrice == null) return;
-        lastKnownTickerPrices[sym.id] = {
-          price: q.regularMarketPrice,
-          change: q.regularMarketChange,
-          pct: q.regularMarketChangePercent,
-        };
-        updateTickerValue(sym, q.regularMarketPrice, q.regularMarketChange, q.regularMarketChangePercent);
-      });
-      showDataWarning(false); // live data OK — remove EST badge
-      return; // success — stop trying fallbacks
-    } catch (err) {
-      console.warn(`[Ticker] ${url.includes('query1') ? 'query1' : 'query2'} failed:`, err.message);
-    }
+      const price  = meta.regularMarketPrice;
+      const prev   = meta.chartPreviousClose || meta.previousClose || price;
+      const change = price - prev;
+      const pct    = prev ? (change / prev) * 100 : 0;
+      return { price, change, pct };
+    } catch (_) { /* try next host */ }
   }
+  return null;
+}
 
-  // Both failed — only simulate symbols we have no real data for
-  console.warn('[Ticker] All endpoints failed, using simulation for missing symbols');
-  simulateTickers();
-  showDataWarning(true);
+async function fetchAndUpdateTickers() {
+  const syms = ALL_SYMBOLS;
+
+  // Fetch all 12 ticker symbols concurrently via v8/chart
+  const results = await Promise.allSettled(syms.map(sym => fetchPriceV8(sym)));
+
+  let anySuccess = false;
+  results.forEach((res, i) => {
+    const sym = syms[i];
+    if (res.status === 'fulfilled' && res.value) {
+      const { price, change, pct } = res.value;
+      lastKnownTickerPrices[sym.id] = { price, change, pct };
+      updateTickerValue(sym, price, change, pct);
+      anySuccess = true;
+    }
+  });
+
+  if (anySuccess) {
+    showDataWarning(false);
+  } else {
+    console.warn('[Ticker] All v8/chart fetches failed — using simulation');
+    simulateTickers();
+    showDataWarning(true);
+  }
 }
 
 // Show/hide data reliability warning
 function showDataWarning(show) {
   let dot = document.getElementById('ticker-data-warning');
   if (show && !dot) {
-    const ticker = document.querySelector('.ticker-track');
-    if (!ticker) return;
     dot = document.createElement('span');
     dot.id = 'ticker-data-warning';
     dot.title = 'Live data unavailable — showing estimated prices';
@@ -1000,37 +1005,31 @@ function simulateMainChart(canvas) {
 }
 
 
-// ── Live price data (chip prices) ────────────
+// ── Live price data (chip prices) — v8/chart (no crumb required) ──────────
 async function fetchHomeData() {
-  const symbolStr = ALL_HOME_SYMBOLS.map(s => s.symbol).join(',');
-  const fields = 'regularMarketPrice,regularMarketChange,regularMarketChangePercent';
-  const urls = [
-    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolStr)}&fields=${fields}`,
-    `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbolStr)}&fields=${fields}`,
-  ];
+  // Batch 25 symbols concurrently — v8/chart gives meta.regularMarketPrice
+  // Limit concurrency to 6 at a time to avoid rate-limiting
+  const BATCH = 6;
+  const syms  = ALL_HOME_SYMBOLS;
+  let anySuccess = false;
 
-  for (const url of urls) {
-    try {
-      const result = await window.electronAPI.fetchJson(url);
-      if (!result.ok) continue;
-      const data   = JSON.parse(result.text);
-      const quotes = data?.quoteResponse?.result || [];
-      if (!quotes.length) continue;
-      ALL_HOME_SYMBOLS.forEach(sym => {
-        const q = quotes.find(r => r.symbol === sym.symbol);
-        if (q && q.regularMarketPrice != null) {
-          updateHomeCard(sym, q.regularMarketPrice, q.regularMarketChange, q.regularMarketChangePercent);
-        }
-      });
-      return; // success
-    } catch (err) {
-      console.warn('[HomeData] endpoint failed:', err.message);
-    }
+  for (let i = 0; i < syms.length; i += BATCH) {
+    const batch = syms.slice(i, i + BATCH);
+    const results = await Promise.allSettled(batch.map(sym => fetchPriceV8(sym)));
+    results.forEach((res, j) => {
+      const sym = batch[j];
+      if (res.status === 'fulfilled' && res.value) {
+        const { price, change, pct } = res.value;
+        updateHomeCard(sym, price, change, pct);
+        anySuccess = true;
+      }
+    });
   }
 
-  // Both endpoints failed — only simulate on very first load
-  if (Object.keys(lastKnownPrices).length === 0) simulateHomeCards();
-  else console.warn('[HomeData] All endpoints failed, keeping last known prices');
+  if (!anySuccess) {
+    if (Object.keys(lastKnownPrices).length === 0) simulateHomeCards();
+    else console.warn('[HomeData] All v8/chart fetches failed, keeping last known prices');
+  }
 }
 
 function updateHomeCard(sym, price, change, pct) {

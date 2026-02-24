@@ -30,16 +30,9 @@ jobs:
           npx electron-builder --mac dmg --x64 --publish never
           npx electron-builder --mac dmg --arm64 --publish never
 
-      - name: Upload x64 DMG
+      - name: Upload macOS DMGs
         uses: actions/upload-artifact@v4
         with:
-          name: FinanceHub-macOS-x64
-          path: dist/*x64*.dmg
-          retention-days: 30
-
-      - name: Upload arm64 DMG (Apple Silicon)
-        uses: actions/upload-artifact@v4
-        with:
-          name: FinanceHub-macOS-arm64
-          path: dist/*arm64*.dmg
+          name: FinanceHub-macOS-DMGs
+          path: dist/*.dmg
           retention-days: 30
