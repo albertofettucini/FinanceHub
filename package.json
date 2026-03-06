@@ -1,6 +1,6 @@
 {
   "name": "finance-hub",
-  "version": "1.0.0",
+  "version": "2.92.0",
   "description": "All-in-one financial platform - Bloomberg, TradingView, Investing, Yahoo Finance",
   "main": "main.js",
   "scripts": {

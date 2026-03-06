@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinanceHub v1.1 — Preview</title>
+  <link rel="stylesheet" href="renderer/styles.css" />
+  <style>
+    .titlebar { -webkit-app-region: unset !important; }
+    .titlebar-left, .titlebar-right, .titlebar-center,
+    .sidebar-toggle-btn, .icon-btn { -webkit-app-region: unset !important; }
+
+    /* force reload of css */
+    /* Mock webview placeholders */
+    .wv-mock {
+      position: absolute; inset: 0;
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
+    }
+    .wv-mock.active { display: flex; }
+    .wv-mock-icon {
+      width: 64px; height: 64px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 900; border: 2px solid;
+    }
+    .wv-mock-icon.marketwatch { background: var(--marketwatch-lo); color: var(--marketwatch); border-color: rgba(22,163,74,0.3); }
+    .wv-mock-icon.tradingview { background: var(--tradingview-lo); color: var(--tradingview); border-color: rgba(59,130,246,0.3); }
+    .wv-mock-icon.investing   { background: var(--investing-lo);   color: var(--investing);   border-color: rgba(239,68,68,0.3); }
+    .wv-mock-icon.yahoo       { background: var(--yahoo-lo);       color: var(--yahoo);       border-color: rgba(168,85,247,0.3); }
+    .wv-mock-label { font-size: 18px; font-weight: 700; color: var(--text-md); }
+    .wv-mock-sub   { font-size: 13px; color: var(--text-lo); }
+  </style>
+</head>
+<body>
+
+  <!-- TITLE BAR -->
+  <div class="titlebar">
+    <div class="titlebar-left">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M3 17l4-8 3.5 5 3-6.5L18 17H3z" fill="url(#lg)" />
+            <defs>
+              <linearGradient id="lg" x1="3" y1="17" x2="18" y2="8" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#06b6d4"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="brand-name">FinanceHub</span>
+      </div>
+    </div>
+
+    <div class="titlebar-center" id="market-ticker">
+      <div class="ticker-item"><span class="ticker-label">S&amp;P 500</span><span class="ticker-value positive" id="tv-sp500">5,872 (+0.42%)</span></div>
+      <div class="ticker-sep">·</div>
+      <div class="ticker-item"><span class="ticker-label">NASDAQ</span><span class="ticker-value positive" id="tv-nasdaq">18,641 (+0.61%)</span></div>
+      <div class="ticker-sep">·</div>
+      <div class="ticker-item"><span class="ticker-label">BIST 100</span><span class="ticker-value negative" id="tv-bist">9,783 (-0.18%)</span></div>
+      <div class="ticker-sep">·</div>
+      <div class="ticker-item"><span class="ticker-label">BTC/USD</span><span class="ticker-value positive" id="tv-btc">97,520 (+1.24%)</span></div>
+    </div>
+
+    <div class="titlebar-right">
+      <button class="wctrl wctrl-min"><svg viewBox="0 0 10 1"><line x1="0" y1="0.5" x2="10" y2="0.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+      <button class="wctrl wctrl-max"><svg viewBox="0 0 10 10"><rect x="0.6" y="0.6" width="8.8" height="8.8" rx="1.5" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></button>
+      <button class="wctrl wctrl-close"><svg viewBox="0 0 10 10"><line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+
+      <!-- Top row: Overview button + collapse toggle -->
+      <div class="sidebar-top-row">
+        <button class="nav-btn overview-btn active" data-site="overview" onclick="switchSite('overview')">
+          <div class="nav-icon-wrap overview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">Overview</span>
+            <span class="nav-sub">Market snapshot</span>
+          </div>
+          <div class="nav-bar-line overview-bar"></div>
+        </button>
+        <button class="sidebar-toggle-btn" id="btn-toggle" title="Collapse sidebar (Ctrl+B)" onclick="toggleSidebar()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline id="toggle-chevron" points="10,4 6,8 10,12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Platforms label -->
+      <div class="sidebar-header">
+        <span class="sidebar-section-label">PLATFORMS</span>
+      </div>
+
+      <nav class="nav-list">
+        <button class="nav-btn" data-site="marketwatch" onclick="switchSite('marketwatch')">
+          <div class="nav-icon-wrap marketwatch">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3 17l3.5-7 3 4.5 3-9 4 8 3-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">MarketWatch</span>
+            <span class="nav-sub">Stock news &amp; analysis</span>
+          </div>
+          <div class="nav-bar-line marketwatch-bar"></div>
+        </button>
+
+        <button class="nav-btn" data-site="tradingview" onclick="switchSite('tradingview')">
+          <div class="nav-icon-wrap tradingview">
+            <svg viewBox="0 0 24 24" fill="none"><polyline points="2,18 7,10 11,14 16,6 22,14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">TradingView</span>
+            <span class="nav-sub">Charts &amp; technical analysis</span>
+          </div>
+          <div class="nav-bar-line tradingview-bar"></div>
+        </button>
+
+        <button class="nav-btn" data-site="investing" onclick="switchSite('investing')">
+          <div class="nav-icon-wrap investing">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">Investing.com</span>
+            <span class="nav-sub">Market data &amp; news</span>
+          </div>
+          <div class="nav-bar-line investing-bar"></div>
+        </button>
+
+        <button class="nav-btn" data-site="yahoo" onclick="switchSite('yahoo')">
+          <div class="nav-icon-wrap yahoo">
+            <svg viewBox="0 0 24 24" fill="currentColor"><text x="2" y="18" font-size="13" font-weight="900" font-family="sans-serif">Y!</text></svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">Yahoo Finance</span>
+            <span class="nav-sub">Stocks &amp; portfolio tracking</span>
+          </div>
+          <div class="nav-bar-line yahoo-bar"></div>
+        </button>
+      </nav>
+
+      <!-- Settings panel -->
+      <div class="settings-panel" id="settings-panel">
+        <div class="settings-header">
+          <span class="settings-title">Ticker Symbols</span>
+          <button class="icon-btn" onclick="closeSettings()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/>
+            </svg>
+          </button>
+        </div>
+        <div class="settings-body">
+          <label class="sym-row"><input type="checkbox" class="sym-check" checked><span class="sym-name">S&amp;P 500</span><span class="sym-code">^GSPC</span></label>
+          <label class="sym-row"><input type="checkbox" class="sym-check" checked><span class="sym-name">NASDAQ</span><span class="sym-code">^IXIC</span></label>
+          <label class="sym-row"><input type="checkbox" class="sym-check"><span class="sym-name">Dow Jones</span><span class="sym-code">^DJI</span></label>
+          <label class="sym-row"><input type="checkbox" class="sym-check"><span class="sym-name">FTSE 100</span><span class="sym-code">^FTSE</span></label>
+          <label class="sym-row"><input type="checkbox" class="sym-check"><span class="sym-name">Nikkei</span><span class="sym-code">^N225</span></label>
+          <label class="sym-row"><input type="checkbox" class="sym-check"><span class="sym-name">DAX</span><span class="sym-code">^GDAXI</span></label>
+          <label class="sym-row"><input type="checkbox" class="sym-check" checked><span class="sym-name">BIST 100</span><span class="sym-code">XU100.IS</span></label>
+          <label class="sym-row"><input type="checkbox" class="sym-check" checked><span class="sym-name">BTC/USD</span><span class="sym-code">BTC-USD</span></label>
+          <label class="sym-row"><input type="checkbox" class="sym-check" disabled><span class="sym-name">ETH/USD</span><span class="sym-code">ETH-USD</span></label>
+          <label class="sym-row"><input type="checkbox" class="sym-check" disabled><span class="sym-name">EUR/USD</span><span class="sym-code">EURUSD=X</span></label>
+          <label class="sym-row"><input type="checkbox" class="sym-check" disabled><span class="sym-name">Gold</span><span class="sym-code">GC=F</span></label>
+          <label class="sym-row"><input type="checkbox" class="sym-check" disabled><span class="sym-name">WTI Oil</span><span class="sym-code">CL=F</span></label>
+        </div>
+        <div class="settings-footer-note" style="color:var(--purple)">Maximum 4 selected</div>
+      </div>
+
+      <!-- Sidebar footer -->
+      <div class="sidebar-footer">
+        <div class="markets-grid">
+          <div class="mkt-row open" id="mkt-nyse">
+            <div class="mkt-dot open"></div>
+            <span class="mkt-flag">🇺🇸</span>
+            <span class="mkt-label">NYSE</span>
+            <span class="mkt-status-text">Open</span>
+          </div>
+          <div class="mkt-row open" id="mkt-bist">
+            <div class="mkt-dot open"></div>
+            <span class="mkt-flag">🇹🇷</span>
+            <span class="mkt-label">BIST</span>
+            <span class="mkt-status-text">Open</span>
+          </div>
+          <div class="mkt-row closed" id="mkt-lse">
+            <div class="mkt-dot closed"></div>
+            <span class="mkt-flag">🇬🇧</span>
+            <span class="mkt-label">LSE</span>
+            <span class="mkt-status-text">Closed</span>
+          </div>
+          <div class="mkt-row" id="mkt-crypto">
+            <div class="mkt-dot mkt-dot-crypto"></div>
+            <span class="mkt-flag">₿</span>
+            <span class="mkt-label">Crypto</span>
+            <span class="mkt-status-text mkt-always-open">24/7</span>
+          </div>
+        </div>
+
+        <div class="sidebar-bottom-row">
+          <span class="sidebar-version">v1.1</span>
+          <button class="icon-btn" onclick="openSettings()" title="Ticker settings">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="10" cy="10" r="3"/>
+              <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="sidebar-disclaimer">Not affiliated with listed platforms.</div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="content">
+      <div class="navbar">
+        <div class="nav-actions">
+          <button class="action-btn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 16l-6-6 6-6"/></svg></button>
+          <button class="action-btn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l6 6-6 6"/></svg></button>
+          <button class="action-btn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1v6h-6"/><path d="M3 19v-6h6"/><path d="M17 7A8 8 0 0 0 5.07 6.07"/><path d="M3 13a8 8 0 0 0 11.93.93"/></svg></button>
+          <button class="action-btn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l7-7 7 7"/><path d="M5 7v10h4v-5h2v5h4V7"/></svg></button>
+        </div>
+
+        <div class="url-bar" id="url-bar" data-site="overview">
+          <div class="url-site-badge"><span id="url-badge-text">⊞</span></div>
+          <span class="url-text" id="url-text">Market Overview</span>
+        </div>
+
+        <div class="navbar-right">
+          <div class="zoom-controls">
+            <button class="action-btn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="10" x2="16" y2="10"/></svg></button>
+            <span class="zoom-label">100%</span>
+            <button class="action-btn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Webview area -->
+      <div class="webview-area">
+
+        <!-- HOME PANEL (Overview) -->
+        <div class="home-panel active" id="home-panel">
+﻿          <div class="home-cards-section">
+          <div class="home-category">
+            <div class="home-category-header">
+              <span class="home-category-label">INDICES</span>
+              <div class="home-category-line"></div>
+            </div>
+            <div class="home-category-grid">
+              <div class="mkt-card"><span class="card-label">S&amp;P 500</span><span class="card-price" id="hprice-sp500">5,872</span><span class="card-change positive" id="hchange-sp500">+0.42%</span></div>
+              <div class="mkt-card"><span class="card-label">NASDAQ</span><span class="card-price" id="hprice-nasdaq">18,641</span><span class="card-change positive" id="hchange-nasdaq">+0.61%</span></div>
+              <div class="mkt-card"><span class="card-label">Dow Jones</span><span class="card-price" id="hprice-dji">43,218</span><span class="card-change positive" id="hchange-dji">+0.19%</span></div>
+              <div class="mkt-card"><span class="card-label">BIST 100</span><span class="card-price" id="hprice-bist">9,783</span><span class="card-change negative" id="hchange-bist">-0.18%</span></div>
+              <div class="mkt-card"><span class="card-label">DAX</span><span class="card-price" id="hprice-dax">17,832</span><span class="card-change positive" id="hchange-dax">+0.34%</span></div>
+              <div class="mkt-card"><span class="card-label">FTSE 100</span><span class="card-price" id="hprice-ftse">7,694</span><span class="card-change negative" id="hchange-ftse">-0.07%</span></div>
+              <div class="mkt-card"><span class="card-label">Nikkei 225</span><span class="card-price" id="hprice-n225">38,512</span><span class="card-change positive" id="hchange-n225">+0.28%</span></div>
+              <div class="mkt-card"><span class="card-label">Hang Seng</span><span class="card-price" id="hprice-hsi">17,198</span><span class="card-change negative" id="hchange-hsi">-0.41%</span></div>
+            </div>
+          </div>
+          <div class="home-category">
+            <div class="home-category-header">
+              <span class="home-category-label">CRYPTO</span>
+              <div class="home-category-line"></div>
+            </div>
+            <div class="home-category-grid">
+              <div class="mkt-card"><span class="card-label">Bitcoin</span><span class="card-price" id="hprice-btc">97,520</span><span class="card-change positive" id="hchange-btc">+1.24%</span></div>
+              <div class="mkt-card"><span class="card-label">Ethereum</span><span class="card-price" id="hprice-eth">3,412</span><span class="card-change positive" id="hchange-eth">+0.87%</span></div>
+              <div class="mkt-card"><span class="card-label">BNB</span><span class="card-price" id="hprice-bnb">621</span><span class="card-change negative" id="hchange-bnb">-0.33%</span></div>
+              <div class="mkt-card"><span class="card-label">Solana</span><span class="card-price" id="hprice-sol">196.40</span><span class="card-change positive" id="hchange-sol">+2.11%</span></div>
+              <div class="mkt-card"><span class="card-label">XRP</span><span class="card-price" id="hprice-xrp">0.58</span><span class="card-change negative" id="hchange-xrp">-0.52%</span></div>
+              <div class="mkt-card"><span class="card-label">Cardano</span><span class="card-price" id="hprice-ada">0.45</span><span class="card-change positive" id="hchange-ada">+0.89%</span></div>
+            </div>
+          </div>
+          <div class="home-category">
+            <div class="home-category-header">
+              <span class="home-category-label">FOREX</span>
+              <div class="home-category-line"></div>
+            </div>
+            <div class="home-category-grid">
+              <div class="mkt-card"><span class="card-label">USD / TRY</span><span class="card-price" id="hprice-usdtry">32.48</span><span class="card-change negative" id="hchange-usdtry">-0.12%</span></div>
+              <div class="mkt-card"><span class="card-label">EUR / TRY</span><span class="card-price" id="hprice-eurtry">35.14</span><span class="card-change negative" id="hchange-eurtry">-0.09%</span></div>
+              <div class="mkt-card"><span class="card-label">EUR / USD</span><span class="card-price" id="hprice-eurusd">1.0820</span><span class="card-change positive" id="hchange-eurusd">+0.08%</span></div>
+              <div class="mkt-card"><span class="card-label">GBP / USD</span><span class="card-price" id="hprice-gbpusd">1.2651</span><span class="card-change negative" id="hchange-gbpusd">-0.14%</span></div>
+              <div class="mkt-card"><span class="card-label">USD / JPY</span><span class="card-price" id="hprice-usdjpy">149.52</span><span class="card-change positive" id="hchange-usdjpy">+0.21%</span></div>
+              <div class="mkt-card"><span class="card-label">USD / CNY</span><span class="card-price" id="hprice-usdcny">7.2411</span><span class="card-change negative" id="hchange-usdcny">-0.04%</span></div>
+            </div>
+          </div>
+          <div class="home-category">
+            <div class="home-category-header">
+              <span class="home-category-label">COMMODITIES</span>
+              <div class="home-category-line"></div>
+            </div>
+            <div class="home-category-grid">
+              <div class="mkt-card"><span class="card-label">Gold</span><span class="card-price" id="hprice-gold">2,334.50</span><span class="card-change positive" id="hchange-gold">+0.55%</span></div>
+              <div class="mkt-card"><span class="card-label">Silver</span><span class="card-price" id="hprice-silver">27.48</span><span class="card-change positive" id="hchange-silver">+0.71%</span></div>
+              <div class="mkt-card"><span class="card-label">WTI Oil</span><span class="card-price" id="hprice-oil">78.62</span><span class="card-change negative" id="hchange-oil">-0.31%</span></div>
+              <div class="mkt-card"><span class="card-label">Brent</span><span class="card-price" id="hprice-brent">82.35</span><span class="card-change negative" id="hchange-brent">-0.18%</span></div>
+              <div class="mkt-card"><span class="card-label">Nat. Gas</span><span class="card-price" id="hprice-gas">2.15</span><span class="card-change positive" id="hchange-gas">+1.42%</span></div>
+            </div>
+          </div>
+        </div>
+<div class="home-bottom">
+            <div class="home-markets-panel">
+              <div class="home-panel-title">MARKET HOURS</div>
+              <div id="home-markets-list">
+                <div class="home-mkt-row open">
+                  <div class="home-mkt-dot open"></div>
+                  <span class="home-mkt-flag">🇺🇸</span>
+                  <span class="home-mkt-name">NYSE</span>
+                  <span class="home-mkt-countdown" id="cd-nyse">3h 22m left</span>
+                </div>
+                <div class="home-mkt-row open">
+                  <div class="home-mkt-dot open"></div>
+                  <span class="home-mkt-flag">🇹🇷</span>
+                  <span class="home-mkt-name">BIST</span>
+                  <span class="home-mkt-countdown" id="cd-bist">5h 41m left</span>
+                </div>
+                <div class="home-mkt-row closed">
+                  <div class="home-mkt-dot closed"></div>
+                  <span class="home-mkt-flag">🇬🇧</span>
+                  <span class="home-mkt-name">LSE</span>
+                  <span class="home-mkt-countdown" id="cd-lse">Opens in 16h 10m</span>
+                </div>
+                <div class="home-mkt-row open">
+                  <div class="home-mkt-dot crypto"></div>
+                  <span class="home-mkt-flag">₿</span>
+                  <span class="home-mkt-name">Crypto</span>
+                  <span class="home-mkt-countdown">24 / 7</span>
+                </div>
+              </div>
+            </div>
+            <div class="home-news-panel">
+              <div class="home-panel-title">HEADLINES</div>
+              <div class="home-news-list" id="home-news-list">
+                <div class="home-news-item">S&amp;P 500 rallies as Fed signals potential rate cuts amid cooling inflation data</div>
+                <div class="home-news-item">Bitcoin surges past $97,000 as institutional demand accelerates into Q1</div>
+                <div class="home-news-item">BIST 100 closes higher on strong earnings from banking sector</div>
+                <div class="home-news-item">European markets mixed ahead of ECB policy decision this Thursday</div>
+                <div class="home-news-item">Nasdaq composite hits fresh highs driven by AI chip sector momentum</div>
+                <div class="home-news-item">Gold prices climb to 3-month high amid dollar weakness and safe-haven demand</div>
+                <div class="home-news-item">Oil extends losses as OPEC+ output deal uncertainty weighs on markets</div>
+                <div class="home-news-item">Ethereum surges 4% following positive regulatory clarity signals from SEC</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mock webviews -->
+        <div class="wv-mock" id="mock-marketwatch">
+          <div class="wv-mock-icon marketwatch">MW</div>
+          <div class="wv-mock-label">MarketWatch</div>
+          <div class="wv-mock-sub">marketwatch.com · Stock News &amp; Analysis</div>
+        </div>
+        <div class="wv-mock" id="mock-tradingview">
+          <div class="wv-mock-icon tradingview">▲</div>
+          <div class="wv-mock-label">TradingView</div>
+          <div class="wv-mock-sub">tradingview.com · Charts &amp; Technical Analysis</div>
+        </div>
+        <div class="wv-mock" id="mock-investing">
+          <div class="wv-mock-icon investing">i</div>
+          <div class="wv-mock-label">Investing.com</div>
+          <div class="wv-mock-sub">investing.com · Market Data &amp; News</div>
+        </div>
+        <div class="wv-mock" id="mock-yahoo">
+          <div class="wv-mock-icon yahoo">Y!</div>
+          <div class="wv-mock-label">Yahoo Finance</div>
+          <div class="wv-mock-sub">finance.yahoo.com · Stocks &amp; Portfolio Tracking</div>
+        </div>
+      </div>
+
+      <!-- News strip -->
+      <div class="news-strip">
+        <span class="news-tag">MARKETS</span>
+        <div class="news-divider"></div>
+        <span class="news-text" id="news-text">S&amp;P 500 rallies as Fed signals potential rate cuts amid cooling inflation data</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SITES_MAP = {
+      overview:    { badge: '⊞', url: 'Market Overview', cls: 'overview' },
+      marketwatch: { badge: 'MW', url: 'marketwatch.com',   cls: 'marketwatch' },
+      tradingview: { badge: '▲',  url: 'tradingview.com',   cls: 'tradingview' },
+      investing:   { badge: 'i',  url: 'investing.com',     cls: 'investing'   },
+      yahoo:       { badge: 'Y!', url: 'finance.yahoo.com', cls: 'yahoo'       },
+    };
+
+    let currentSite = 'overview';
+
+    function switchSite(id) {
+      currentSite = id;
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.site === id));
+  ﻿    // -- Home card simulation --
+    const CARDS = [
+      { id: 'sp500',   base: 5870,   fmt: 'int' },
+      { id: 'nasdaq',  base: 18600,  fmt: 'int' },
+      { id: 'dji',     base: 43200,  fmt: 'int' },
+      { id: 'bist',    base: 9800,   fmt: 'int' },
+      { id: 'dax',     base: 17800,  fmt: 'int' },
+      { id: 'ftse',    base: 7680,   fmt: 'int' },
+      { id: 'n225',    base: 38500,  fmt: 'int' },
+      { id: 'hsi',     base: 17200,  fmt: 'int' },
+      { id: 'btc',     base: 97500,  fmt: 'int' },
+      { id: 'eth',     base: 3400,   fmt: 'int' },
+      { id: 'bnb',     base: 620,    fmt: 'int' },
+      { id: 'sol',     base: 195,    fmt: 'dec' },
+      { id: 'xrp',     base: 0.58,   fmt: 'dec' },
+      { id: 'ada',     base: 0.45,   fmt: 'dec' },
+      { id: 'usdtry',  base: 32.5,   fmt: 'dec' },
+      { id: 'eurtry',  base: 35.2,   fmt: 'dec' },
+      { id: 'eurusd',  base: 1.0820, fmt: 'dec' },
+      { id: 'gbpusd',  base: 1.2650, fmt: 'dec' },
+      { id: 'usdjpy',  base: 149.5,  fmt: 'dec' },
+      { id: 'usdcny',  base: 7.24,   fmt: 'dec' },
+      { id: 'gold',    base: 2330,   fmt: 'dec' },
+      { id: 'silver',  base: 27.5,   fmt: 'dec' },
+      { id: 'oil',     base: 78.5,   fmt: 'dec' },
+      { id: 'brent',   base: 82.3,   fmt: 'dec' },
+      { id: 'gas',     base: 2.15,   fmt: 'dec' },
+    ];
+
+    function animateCards() {
+      CARDS.forEach(c => {
+        const pEl = document.getElementById(`hprice-${c.id}`);
+        const cEl = document.getElementById(`hchange-${c.id}`);
+        if (!pEl || !cEl) return;
+        const change = (Math.random() - 0.48) * c.base * 0.004;
+        const val    = c.base + change;
+        const pct    = ((change / c.base) * 100).toFixed(2);
+        const sign   = change >= 0 ? '+' : '';
+        const isPos  = change >= 0;
+        const fmt    = c.fmt === 'int'
+          ? val.toLocaleString('en-US', { maximumFractionDigits: 0 })
+          : val.toFixed(2);
+        const oldTxt = pEl.textContent;
+        pEl.textContent  = fmt;
+        cEl.textContent  = `${sign}${pct}%`;
+        if (oldTxt !== fmt) {
+          pEl.classList.remove('flash-up', 'flash-down');
+          void pEl.offsetWidth;
+          pEl.classList.add(isPos ? 'flash-up' : 'flash-down');
+          setTimeout(() => pEl.classList.remove('flash-up', 'flash-down'), 700);
+        }
+        cEl.className = `card-change ${isPos ? 'positive' : 'negative'}`;
+      });
+    }
+    setInterval(animateCards, 5000);
+
+    // ── News strip rotation ──
+    const headlines = [
+      "S&P 500 rallies as Fed signals potential rate cuts amid cooling inflation data",
+      "Bitcoin surges past $97,000 as institutional demand accelerates into Q1",
+      "BIST 100 closes higher on strong earnings from banking sector",
+      "European markets mixed ahead of ECB policy decision this Thursday",
+      "Nasdaq composite hits fresh highs driven by AI chip sector momentum",
+    ];
+    let ni = 0;
+    setInterval(() => {
+      const el = document.getElementById('news-text');
+      el.classList.add('news-fade');
+      setTimeout(() => {
+        ni = (ni + 1) % headlines.length;
+        el.textContent = headlines[ni];
+        el.classList.remove('news-fade');
+      }, 350);
+    }, 6000);
+  </script>
+</body>
+</html>

@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FinanceHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -74,6 +76,188 @@
           </svg>
         </button>
       </div>
+
+      <!-- My Space — personal watchlist & alerts -->
+      <div class="sidebar-myspace-section">
+        <button class="nav-btn" data-site="myspace" id="btn-myspace" title="My Space — Watchlist & Alerts (Ctrl+W)">
+          <div class="nav-icon-wrap myspace-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">My Space</span>
+            <span class="nav-sub" id="ms-nav-sub">Watchlist &amp; alerts</span>
+          </div>
+          <div class="nav-bar-line myspace-bar"></div>
+        </button>
+        <button class="nav-btn" data-site="heatmap" id="btn-heatmap" title="Sector Heatmap">
+          <div class="nav-icon-wrap heatmap-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="9" rx="1.5"/>
+              <rect x="14" y="3" width="7" height="5" rx="1.5"/>
+              <rect x="14" y="12" width="7" height="9" rx="1.5"/>
+              <rect x="3" y="16" width="7" height="5" rx="1.5"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">Sectors</span>
+            <span class="nav-sub">S&amp;P 500 heatmap</span>
+          </div>
+          <div class="nav-bar-line heatmap-bar"></div>
+        </button>
+      </div>
+
+      <!-- Scrollable area: Analytics + Global + Platforms -->
+      <div class="sidebar-scroll-area">
+
+      <!-- Analytics label -->
+      <div class="sidebar-header">
+        <span class="sidebar-section-label">ANALYTICS</span>
+      </div>
+
+      <div class="sidebar-analytics-section">
+
+        <button class="nav-btn" data-site="pulse" id="btn-pulse" title="Pulse Analytics">
+          <div class="nav-icon-wrap pulse-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="2,12 6,12 8,4 10,20 12,12 14,16 16,12 22,12"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">Pulse</span>
+            <span class="nav-sub">Fear &amp; Greed · Macro</span>
+          </div>
+          <div class="nav-bar-line pulse-bar"></div>
+        </button>
+
+        <button class="nav-btn" data-site="calendar" id="btn-calendar" title="Earnings Calendar">
+          <div class="nav-icon-wrap calendar-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8"  y1="2" x2="8"  y2="6"/>
+              <line x1="3"  y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">Calendar</span>
+            <span class="nav-sub">Earnings &amp; events</span>
+          </div>
+          <div class="nav-bar-line calendar-bar"></div>
+        </button>
+
+        <button class="nav-btn" data-site="sentiment" id="btn-sentiment" title="Market Sentiment">
+          <div class="nav-icon-wrap sentiment-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">Sentiment</span>
+            <span class="nav-sub">WSB · Correlation</span>
+          </div>
+          <div class="nav-bar-line sentiment-bar"></div>
+        </button>
+
+        <button class="nav-btn" data-site="insider" id="btn-insider" title="Insider Flows — SEC Form 4 Activity">
+          <div class="nav-icon-wrap insider-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">Insider Flows</span>
+            <span class="nav-sub">SEC Form 4 activity</span>
+          </div>
+          <div class="nav-bar-line insider-bar"></div>
+        </button>
+
+        <button class="nav-btn" data-site="signals" id="btn-signals" title="TA Signal Scanner — EMA · RSI · Momentum">
+          <div class="nav-icon-wrap signals-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">TA Signals</span>
+            <span class="nav-sub">EMA · RSI · Momentum</span>
+          </div>
+          <div class="nav-bar-line signals-bar"></div>
+        </button>
+
+        <button class="nav-btn" data-site="newsheat" id="btn-newsheat" title="News Heatmap — Which assets are in the spotlight?">
+          <div class="nav-icon-wrap newsheat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+              <line x1="12" y1="2" x2="12" y2="7"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">News Heat</span>
+            <span class="nav-sub">Spotlight · Buzz tracker</span>
+          </div>
+          <div class="nav-bar-line newsheat-bar"></div>
+        </button>
+
+        <button class="nav-btn" data-site="tfalign" id="btn-tfalign" title="Multi-TF Alignment Scanner — 1D/1W/1M trend agreement">
+          <div class="nav-icon-wrap tfalign-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+              <circle cx="8"  cy="6"  r="2" fill="currentColor" stroke="none"/>
+              <circle cx="14" cy="12" r="2" fill="currentColor" stroke="none"/>
+              <circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">TF Align</span>
+            <span class="nav-sub">1D/1W/1M trend agreement</span>
+          </div>
+          <div class="nav-bar-line tfalign-bar"></div>
+        </button>
+
+
+        <!-- Market DNA (v2.91) -->
+        <button class="nav-btn" data-site="dna" id="btn-dna" title="Market DNA — Regime · Conviction · Edge">
+          <div class="nav-icon-wrap dna-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 12c0 0 4-8 10-8s10 8 10 8"/>
+              <path d="M2 12c0 0 4 8 10 8s10-8 10-8"/>
+              <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
+              <line x1="12" y1="4" x2="12" y2="7"/>
+              <line x1="12" y1="17" x2="12" y2="20"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">Market DNA</span>
+            <span class="nav-sub">Regime · Edge · Conviction</span>
+          </div>
+          <div class="nav-bar-line dna-bar"></div>
+        </button>
+
+        <!-- Symbol Scanner (v2.41) -->
+        <button class="nav-btn" data-site="scanner" id="btn-scanner" title="Symbol Scanner — Screener with TA criteria">
+          <div class="nav-icon-wrap scanner-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <line x1="8" y1="11" x2="14" y2="11"/>
+              <line x1="11" y1="8" x2="11" y2="14"/>
+            </svg>
+          </div>
+          <div class="nav-text">
+            <span class="nav-title">Scanner</span>
+            <span class="nav-sub">Screener & filter</span>
+          </div>
+          <div class="nav-bar-line scanner-bar"></div>
+        </button>
+
+      </div>
+
 
       <!-- Platforms label -->
       <div class="sidebar-header">
@@ -194,6 +378,8 @@
 
       </nav>
 
+      </div><!-- /sidebar-scroll-area -->
+
       <!-- Settings panel (slides over sidebar) -->
       <div class="settings-panel" id="settings-panel">
         <div class="settings-header">
@@ -210,44 +396,57 @@
 
       <!-- Sidebar footer -->
       <div class="sidebar-footer">
-        <div class="markets-grid">
-          <div class="mkt-row" id="mkt-nyse">
-            <div class="mkt-dot"></div>
-            <span class="mkt-flag">🇺🇸</span>
-            <span class="mkt-label">NYSE</span>
-            <span class="mkt-status-text">–</span>
-          </div>
-          <div class="mkt-row" id="mkt-bist">
-            <div class="mkt-dot"></div>
-            <span class="mkt-flag">🇹🇷</span>
-            <span class="mkt-label">BIST</span>
-            <span class="mkt-status-text">–</span>
-          </div>
-          <div class="mkt-row" id="mkt-lse">
-            <div class="mkt-dot"></div>
-            <span class="mkt-flag">🇬🇧</span>
-            <span class="mkt-label">LSE</span>
-            <span class="mkt-status-text">–</span>
-          </div>
-          <div class="mkt-row" id="mkt-crypto">
-            <div class="mkt-dot mkt-dot-crypto"></div>
-            <span class="mkt-flag">₿</span>
-            <span class="mkt-label">Crypto</span>
-            <span class="mkt-status-text mkt-always-open">24/7</span>
-          </div>
-        </div>
 
         <div class="sidebar-bottom-row">
-          <span class="sidebar-version">v1.1</span>
-          <button class="icon-btn" id="btn-settings" title="Ticker settings">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="10" cy="10" r="3"/>
-              <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/>
-            </svg>
-          </button>
+          <span class="sidebar-version">v2.92</span>
+          <div style="display:flex;gap:2px;align-items:center;">
+            <!-- Theme toggle -->
+            <button class="icon-btn theme-btn" id="btn-theme" title="Switch to light mode">
+              <!-- Moon icon — shown in dark mode (click = go light) -->
+              <svg class="icon-moon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 13A7 7 0 1 1 7 3a5 5 0 0 0 10 10z"/>
+              </svg>
+              <!-- Sun icon — shown in light mode (click = go dark) -->
+              <svg class="icon-sun" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="10" cy="10" r="3.5"/>
+                <line x1="10" y1="1.5" x2="10" y2="3.5"/>
+                <line x1="10" y1="16.5" x2="10" y2="18.5"/>
+                <line x1="1.5" y1="10" x2="3.5" y2="10"/>
+                <line x1="16.5" y1="10" x2="18.5" y2="10"/>
+                <line x1="3.6" y1="3.6" x2="5" y2="5"/>
+                <line x1="15" y1="15" x2="16.4" y2="16.4"/>
+                <line x1="3.6" y1="16.4" x2="5" y2="15"/>
+                <line x1="15" y1="5" x2="16.4" y2="3.6"/>
+              </svg>
+            </button>
+            <!-- Chrome/Acrylic mode toggle (v2.48) -->
+            <button class="icon-btn" id="btn-acrylic" title="Chrome mode — transparent frosted glass window">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="14" height="14" rx="2" stroke-opacity="0.5"/>
+                <path d="M7 7h6M7 10h4M7 13h5" stroke-opacity="0.7"/>
+              </svg>
+            </button>
+            <!-- Settings -->
+            <button class="icon-btn" id="btn-settings" title="Ticker settings">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="10" cy="10" r="3"/>
+                <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <div class="sidebar-disclaimer">Not affiliated with listed platforms.</div>
+        <!-- Market open/closed status strip (v2.80 — bottom left) -->
+        <div class="sidebar-mkt-row">
+          <span class="smkt"><span class="mb-dot" id="smd-nyse"></span><span class="smkt-label" id="smkt-nyse-lbl">NYSE</span></span>
+          <span class="smkt"><span class="mb-dot" id="smd-lse"></span><span class="smkt-label" id="smkt-lse-lbl">LSE</span></span>
+          <span class="smkt"><span class="mb-dot" id="smd-bist"></span><span class="smkt-label" id="smkt-bist-lbl">BIST</span></span>
+          <span class="smkt"><span class="mb-dot crypto"></span><span class="smkt-label" style="color:var(--cyan)">24/7</span></span>
+        </div>
+        <div class="sidebar-cmd-hint" title="Press / to open the command palette">
+          <kbd class="cmd-kbd">/</kbd> Command Palette
+        </div>
+        <div class="sidebar-disclaimer">Not affiliated with listed platforms.<br>For informational purposes only. Data may be delayed. Not financial advice.</div>
       </div>
 
     </aside>
@@ -312,62 +511,61 @@
         <!-- HOME PANEL (built by renderer.js) -->
         <div class="home-panel active" id="home-panel"></div>
 
-        <webview id="wv-marketwatch" class="wv"
-          src="about:blank"
-          partition="persist:marketwatch"
-          useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-          allowpopups></webview>
+        <!-- MY SPACE PANEL (built by renderer.js) -->
+        <div class="myspace-panel" id="myspace-panel"></div>
 
-        <webview id="wv-tradingview" class="wv"
-          src="about:blank"
-          partition="persist:tradingview"
-          useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-          allowpopups></webview>
+        <!-- HEATMAP PANEL (built by renderer.js) -->
+        <div class="heatmap-panel" id="heatmap-panel"></div>
 
-        <webview id="wv-investing" class="wv"
-          src="about:blank"
-          partition="persist:investing"
-          useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-          allowpopups></webview>
+        <!-- PULSE PANEL (built by renderer.js) -->
+        <div class="pulse-panel" id="pulse-panel"></div>
 
-        <webview id="wv-yahoo" class="wv"
-          src="about:blank"
-          partition="persist:yahoo"
-          useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-          allowpopups></webview>
+        <!-- CALENDAR PANEL (built by renderer.js) -->
+        <div class="calendar-panel" id="calendar-panel"></div>
 
-        <webview id="wv-macrotrends" class="wv"
-          src="about:blank"
-          partition="persist:macrotrends"
-          useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-          allowpopups></webview>
+        <!-- SENTIMENT PANEL (built by renderer.js) -->
+        <div class="sentiment-panel" id="sentiment-panel"></div>
 
-        <webview id="wv-reuters" class="wv"
-          src="about:blank"
-          partition="persist:reuters"
-          useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-          allowpopups></webview>
 
-        <webview id="wv-cnbc" class="wv"
-          src="about:blank"
-          partition="persist:cnbc"
-          useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-          allowpopups></webview>
+        <!-- INSIDER FLOWS PANEL (built by renderer.js) -->
+        <div class="insider-flows-panel" id="insider-panel"></div>
 
-        <webview id="wv-finviz" class="wv"
-          src="about:blank"
-          partition="persist:finviz"
-          useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-          allowpopups></webview>
+        <!-- TA SIGNALS PANEL (built by renderer.js) -->
+        <div class="signals-panel" id="signals-panel"></div>
+
+        <!-- NEWS HEATMAP PANEL (built by renderer.js) -->
+        <div class="newsheat-panel" id="newsheat-panel"></div>
+
+        <!-- MULTI-TF ALIGNMENT SCANNER (built by renderer.js) -->
+        <div class="tfalign-panel" id="tfalign-panel"></div>
+
+
+        <!-- SYMBOL SCANNER PANEL (v2.41, built by renderer.js) -->
+        <div class="scanner-panel" id="scanner-panel" style="display:none"></div>
+
+        <!-- MARKET DNA PANEL (v2.91, built by renderer.js) -->
+        <div class="dna-panel" id="dna-panel"></div>
+
+        <!-- DAILY CHALLENGE OVERLAY -->
+        <div class="challenge-overlay" id="challenge-overlay">
+          <div class="challenge-box" id="challenge-box">
+            <!-- filled by renderer.js buildChallengeOverlay() -->
+          </div>
+        </div>
+
+        <!-- v2.92: 8 webviews removed — were unused, wasting ~1GB RAM as separate Chromium processes -->
 
       </div>
 
-      <!-- NEWS STRIP -->
-      <div class="news-strip" id="news-strip">
-        <span class="news-tag">MARKETS</span>
-        <div class="news-divider"></div>
-        <span class="news-text" id="news-text">Fetching market headlines...</span>
+      <!-- LIVE PRICE TICKER TAPE (v2.42) -->
+      <div class="bottom-ticker-bar" id="bottom-ticker-bar">
+        <span class="btb-label">▶ LIVE</span>
+        <div class="btb-track-wrap">
+          <div class="btb-track" id="btb-track"></div>
+        </div>
       </div>
+
+      <!-- NEWS STRIP removed in v2.92 — redundant with news panel -->
 
     </div>
   </div>

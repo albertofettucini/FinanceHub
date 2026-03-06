@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinanceHub Float</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 210px; height: 90px; overflow: hidden; background: transparent; }
+    body { -webkit-app-region: drag; user-select: none; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; }
+    .fw {
+      width: 210px; height: 90px;
+      background: rgba(7,7,15,0.93);
+      backdrop-filter: blur(24px) saturate(160%);
+      border: 1px solid rgba(124,58,237,0.35);
+      border-radius: 11px;
+      padding: 10px 14px 10px 14px;
+      display: flex; flex-direction: column; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .fw::before {
+      content: '';
+      position: absolute; top: -20px; right: -20px;
+      width: 70px; height: 70px;
+      background: radial-gradient(circle, rgba(124,58,237,0.3) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .fw-sym {
+      font-size: 8.5px; font-weight: 700; letter-spacing: 1.1px;
+      text-transform: uppercase; color: rgba(167,139,250,0.75); margin-bottom: 3px;
+    }
+    .fw-price {
+      font-size: 22px; font-weight: 800; color: #fff;
+      line-height: 1; letter-spacing: -0.5px;
+    }
+    .fw-pct { font-size: 12px; font-weight: 700; margin-top: 4px; }
+    .fw-pct.up { color: #22c55e; }
+    .fw-pct.dn { color: #ef4444; }
+    .fw-close {
+      position: absolute; top: 7px; right: 9px;
+      background: transparent; border: none;
+      color: rgba(255,255,255,0.25); font-size: 12px;
+      cursor: pointer; -webkit-app-region: no-drag;
+      transition: color 0.12s; line-height: 1;
+    }
+    .fw-close:hover { color: rgba(255,255,255,0.8); }
+    .fw-label {
+      position: absolute; bottom: 7px; right: 10px;
+      font-size: 7.5px; font-weight: 600; letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.18); text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="fw">
+    <button class="fw-close" id="fw-close" title="Close">✕</button>
+    <div class="fw-sym" id="fw-sym">LOADING</div>
+    <div class="fw-price" id="fw-price">–</div>
+    <div class="fw-pct" id="fw-pct">–</div>
+    <div class="fw-label">Finance Hub</div>
+  </div>
+
+  <script>
+    // Parse initial values from URL params
+    const p = new URLSearchParams(location.search);
+    const symEl   = document.getElementById('fw-sym');
+    const priceEl = document.getElementById('fw-price');
+    const pctEl   = document.getElementById('fw-pct');
+
+    function setValues(symbol, price, pct) {
+      symEl.textContent   = symbol || '–';
+      priceEl.textContent = price  || '–';
+      const pctNum = parseFloat(pct || '0');
+      pctEl.textContent = (pctNum >= 0 ? '+' : '') + pctNum.toFixed(2) + '%';
+      pctEl.className = 'fw-pct ' + (pctNum >= 0 ? 'up' : 'dn');
+    }
+
+    setValues(p.get('symbol'), p.get('price'), p.get('pct'));
+
+    // Close button — window.close() closes this BrowserWindow
+    document.getElementById('fw-close').addEventListener('click', () => window.close());
+
+    // Listen for live price updates from main renderer
+    if (window.electronAPI?.onPriceUpdate) {
+      window.electronAPI.onPriceUpdate(({ symbol, price, pct }) => {
+        setValues(symbol, price, pct);
+      });
+    }
+  </script>
+</body>
+</html>
