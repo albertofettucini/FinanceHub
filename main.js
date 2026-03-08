@@ -22,7 +22,7 @@ function createWindow() {
     // On macOS expose the traffic-light area so our custom titlebar can sit below it
     titleBarOverlay: false,
     transparent: true,           // enables acrylic/chrome mode (v2.48)
-    backgroundColor: '#07070f',
+    backgroundColor: '#c8ccd4',
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

@@ -139,6 +139,7 @@ const ALL_HOME_SYMBOLS = HOME_CATEGORIES.flatMap(c => c.symbols);
 const RISK_SYMBOLS = [
   { id: 'vix', symbol: '^VIX',     label: 'VIX', fmt: 'dec' },
   { id: 'dxy', symbol: 'DX-Y.NYB', label: 'DXY', fmt: 'dec' },
+  { id: 'tnx', symbol: '^TNX',     label: '10Y', fmt: 'dec' },
 ];
 const riskPrices = {};  // { vix: { price, change, pct }, dxy: … }
 
@@ -771,18 +772,18 @@ const btnTheme         = document.getElementById('btn-theme');
 // ══════════════════════════════════════════════
 // THEME (LIGHT / DARK)
 // ══════════════════════════════════════════════
-let currentTheme = localStorage.getItem('fh-theme') || 'dark';
+let currentTheme = localStorage.getItem('fh-theme') || 'light';
 
 function applyTheme(theme) {
   currentTheme = theme;
-  if (theme === 'light') {
-    document.documentElement.setAttribute('data-theme', 'light');
+  if (theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
   } else {
     document.documentElement.removeAttribute('data-theme');
   }
   localStorage.setItem('fh-theme', theme);
   if (btnTheme) {
-    btnTheme.title = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+    btnTheme.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
   }
   // Redraw all visible charts so colors update immediately
   redrawVisibleCharts();
@@ -1812,7 +1813,7 @@ function startChartDrawAnim() {
   function tick(now) {
     const t = Math.min(1, (now - startTs) / DURATION);
     _chartClipFrac = 1 - Math.pow(1 - t, 3); // cubic ease-out
-    const mc = document.getElementById('main-chart');
+    const mc = document.getElementById('main-chart-canvas');
     if (mc && lastMainChartData) drawMainChart(mc, lastMainChartData, lastMainChartSym || selectedChartSym);
     if (t < 1) _chartAnimId = requestAnimationFrame(tick);
     else { _chartAnimId = null; _chartClipFrac = 1.0; }
@@ -7292,6 +7293,93 @@ function buildHomePanel() {
 
   homePanel.innerHTML = `
 
+    <!-- ═══ DASHBOARD VIEW ═══ -->
+    <div class="ov-dashboard" id="ov-dashboard">
+      <div class="ov-header">
+        <div class="ov-header-left">
+          <div class="ov-logo">F</div>
+          <div><div class="ov-title">FinanceHub</div><div class="ov-subtitle">MARKET COMMAND CENTER</div></div>
+        </div>
+        <div class="ov-header-right">
+          <span class="ov-date" id="ov-date"></span>
+          <span class="ov-time" id="ov-time"></span>
+          <span class="ov-live">● LIVE</span>
+        </div>
+      </div>
+
+      <div class="ov-stats-row" id="ov-stats-row">
+        <div class="ov-stat-card"><div class="ov-stat-icon blue">📊</div><div class="ov-stat-label">INDICES</div><div class="ov-stat-value" id="ov-s-idx">–</div><div class="ov-stat-sub neutral" id="ov-s-idx-sub">Tracked</div></div>
+        <div class="ov-stat-card"><div class="ov-stat-icon red">▼</div><div class="ov-stat-label">DECLINING</div><div class="ov-stat-value" id="ov-s-dec">–</div><div class="ov-stat-sub red" id="ov-s-dec-sub"></div></div>
+        <div class="ov-stat-card"><div class="ov-stat-icon amber">⚡</div><div class="ov-stat-label">VIX</div><div class="ov-stat-value" id="ov-s-vix">–</div><div class="ov-stat-sub amber" id="ov-s-vix-sub"></div></div>
+        <div class="ov-stat-card"><div class="ov-stat-icon green">₿</div><div class="ov-stat-label">BTC DOM.</div><div class="ov-stat-value" id="ov-s-btc">–</div><div class="ov-stat-sub green" id="ov-s-btc-sub"></div></div>
+        <div class="ov-stat-card"><div class="ov-stat-icon purple">🔔</div><div class="ov-stat-label">ALERTS</div><div class="ov-stat-value" id="ov-s-alerts">0</div><div class="ov-stat-sub neutral" id="ov-s-alerts-sub">Active</div></div>
+        <div class="ov-stat-card"><div class="ov-stat-icon blue">📅</div><div class="ov-stat-label">EVENTS</div><div class="ov-stat-value" id="ov-s-events">0</div><div class="ov-stat-sub neutral" id="ov-s-events-sub">Today</div></div>
+      </div>
+
+      <div class="ov-main-grid">
+        <div class="ov-card"><div class="ov-card-title">GLOBAL INDICES</div>
+          <table class="ov-idx-table"><thead><tr><th></th><th>INDEX</th><th>PRICE</th><th>CHG</th><th>%</th><th>1M TREND</th></tr></thead><tbody id="ov-idx-tbody"></tbody></table>
+        </div>
+        <div class="ov-card">
+          <div class="ov-card-title">FEAR & GREED</div>
+          <div class="ov-fg-wrap"><canvas id="ov-fg-canvas" width="200" height="110"></canvas><div class="ov-fg-score" id="ov-fg-score">–</div><div class="ov-fg-label" id="ov-fg-label">LOADING</div></div>
+          <div class="ov-breadth-title">NYSE BREADTH</div>
+          <div class="ov-breadth-bar"><div class="ov-breadth-up" id="ov-breadth-up" style="width:50%"></div><div class="ov-breadth-dn" id="ov-breadth-dn" style="width:50%"></div></div>
+          <div class="ov-breadth-labels"><span class="ov-pos" id="ov-breadth-adv">▲ 0</span><span class="ov-neg" id="ov-breadth-dec">▼ 0</span></div>
+          <div class="ov-52w-row"><div class="ov-52w-box"><div class="ov-52w-val" id="ov-52w-hi">–</div><div class="ov-52w-lbl">52W HIGH</div></div><div class="ov-52w-box"><div class="ov-52w-val" id="ov-52w-lo">–</div><div class="ov-52w-lbl">52W LOW</div></div></div>
+        </div>
+        <div class="ov-card"><div class="ov-card-title">TOP MOVERS</div>
+          <div class="ov-movers-tabs"><button class="ov-movers-tab active" data-tab="gainers">GAINERS</button><button class="ov-movers-tab" data-tab="losers">LOSERS</button></div>
+          <div id="ov-movers-list"></div>
+        </div>
+      </div>
+
+      <div class="ov-bottom-grid">
+        <div class="ov-card"><div class="ov-card-title">SECTOR PERFORMANCE</div><div id="ov-sectors"></div></div>
+        <div class="ov-card"><div class="ov-card-title">CRYPTO MARKETS <span id="ov-crypto-vol" style="float:right;color:var(--accent);font-size:10px"></span></div><div id="ov-crypto-list"></div></div>
+        <div class="ov-card"><div class="ov-card-title">LIVE MARKET FEED <span id="ov-feed-all" style="float:right;color:var(--accent);font-size:10px;cursor:pointer">View All →</span></div><div id="ov-feed-list"></div></div>
+      </div>
+
+      <!-- ═══ PANEL SUMMARIES ═══ -->
+      <div class="ov-summary-grid">
+        <div class="ov-summary-card" data-goto="pulse">
+          <div class="ov-summary-card-hdr"><span class="ov-summary-card-icon">📊</span><span class="ov-summary-card-title">MACRO PULSE</span><span class="ov-summary-card-arrow">→</span></div>
+          <div id="ov-pulse-mini">
+            <div class="ov-macro-row"><span class="ov-macro-lbl">VIX</span><span class="ov-macro-val" id="ov-pm-vix">–</span></div>
+            <div class="ov-macro-row"><span class="ov-macro-lbl">DXY</span><span class="ov-macro-val" id="ov-pm-dxy">–</span></div>
+            <div class="ov-macro-row"><span class="ov-macro-lbl">10Y Yield</span><span class="ov-macro-val" id="ov-pm-10y">–</span></div>
+            <div class="ov-macro-row"><span class="ov-macro-lbl">Gold</span><span class="ov-macro-val" id="ov-pm-gold">–</span></div>
+          </div>
+        </div>
+
+        <div class="ov-summary-card" data-goto="calendar">
+          <div class="ov-summary-card-hdr"><span class="ov-summary-card-icon">📅</span><span class="ov-summary-card-title">UPCOMING EVENTS</span><span class="ov-summary-card-arrow">→</span></div>
+          <div id="ov-cal-mini"></div>
+        </div>
+
+        <div class="ov-summary-card" data-goto="sentiment">
+          <div class="ov-summary-card-hdr"><span class="ov-summary-card-icon">🔥</span><span class="ov-summary-card-title">MARKET SENTIMENT</span><span class="ov-summary-card-arrow">→</span></div>
+          <div id="ov-sent-mini">
+            <div class="ov-sent-row"><span class="ov-sent-lbl">Fear & Greed</span><span class="ov-sent-val" id="ov-sm-fg">–</span></div>
+            <div class="ov-sent-row"><span class="ov-sent-lbl">Breadth</span><span class="ov-sent-val" id="ov-sm-breadth">–</span></div>
+            <div class="ov-sent-row"><span class="ov-sent-lbl">Advancing</span><span class="ov-sent-val ov-pos" id="ov-sm-adv">–</span></div>
+            <div class="ov-sent-row"><span class="ov-sent-lbl">Declining</span><span class="ov-sent-val ov-neg" id="ov-sm-dec">–</span></div>
+          </div>
+        </div>
+
+        <div class="ov-summary-card" data-goto="quick">
+          <div class="ov-summary-card-hdr"><span class="ov-summary-card-icon">⚡</span><span class="ov-summary-card-title">QUICK ACCESS</span></div>
+          <div class="ov-quick-link" data-goto="insider"><span class="ov-quick-link-icon">👤</span><span class="ov-quick-link-text">Insider Flows</span><span class="ov-quick-link-sub">SEC Form 4</span></div>
+          <div class="ov-quick-link" data-goto="signals"><span class="ov-quick-link-icon">📡</span><span class="ov-quick-link-text">TA Signals</span><span class="ov-quick-link-sub">EMA · RSI</span></div>
+          <div class="ov-quick-link" data-goto="scanner"><span class="ov-quick-link-icon">🔍</span><span class="ov-quick-link-text">Scanner</span><span class="ov-quick-link-sub">Screen stocks</span></div>
+          <div class="ov-quick-link" data-goto="dna"><span class="ov-quick-link-icon">🧬</span><span class="ov-quick-link-text">Market DNA</span><span class="ov-quick-link-sub">Regime · Edge</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CHART VIEW (shown on symbol click) ═══ -->
+    <div class="ov-chart-view" id="ov-chart-view">
+    <button class="ov-back-btn" id="ov-back-btn">← Dashboard</button>
     <div class="home-tab-bar" id="home-tab-bar">
       ${ALL_CATS.map(c =>
         `<button class="cat-tab${c.id === activeCatId ? ' active' : ''}" data-cat="${c.id}">${c.label}<span class="cat-breadth" id="cb-${c.id}" style="display:none"></span></button>`
@@ -7315,9 +7403,6 @@ function buildHomePanel() {
     </div>
 
     <div class="home-symbol-strip" id="home-symbol-strip"></div>
-
-
-
 
 
     <div class="home-chart-section">
@@ -7513,10 +7598,81 @@ function buildHomePanel() {
       <textarea class="sym-note-ta" id="sym-note-ta" placeholder="Quick notes for this symbol… (press N to toggle)"></textarea>
       <div class="sym-note-footer">Synced with chart notes bar · Esc or N to close</div>
     </div>
+    </div><!-- /ov-chart-view -->
   `;
 
   // Populate symbol strip
   buildSymbolStrip(activeCatId);
+
+  // ── Dashboard navigation handlers ──────────────
+  // Back button
+  document.getElementById('ov-back-btn')?.addEventListener('click', () => showOvDashboard());
+
+  // Dashboard symbol clicks (indices table, movers, crypto)
+  const dashEl = document.getElementById('ov-dashboard');
+  if (dashEl) {
+    dashEl.addEventListener('click', e => {
+      // Index table row click
+      const row = e.target.closest('.ov-idx-row');
+      if (row) {
+        const sym = ALL_HOME_SYMBOLS.find(s => s.symbol === row.dataset.sym || s.id === row.dataset.id);
+        if (sym) showOvChartView(sym);
+        return;
+      }
+      // Mover row click
+      const mover = e.target.closest('.ov-mover-row');
+      if (mover) {
+        const sym = ALL_HOME_SYMBOLS.find(s => s.symbol === mover.dataset.sym || s.id === mover.dataset.id);
+        if (sym) showOvChartView(sym);
+        return;
+      }
+      // Crypto row click
+      const crypto = e.target.closest('.ov-crypto-row');
+      if (crypto) {
+        const sym = ALL_HOME_SYMBOLS.find(s => s.symbol === crypto.dataset.sym || s.id === crypto.dataset.id);
+        if (sym) showOvChartView(sym);
+        return;
+      }
+      // Movers tab toggle
+      const mTab = e.target.closest('.ov-movers-tab');
+      if (mTab) {
+        dashEl.querySelectorAll('.ov-movers-tab').forEach(t => t.classList.remove('active'));
+        mTab.classList.add('active');
+        updateOvMovers(mTab.dataset.tab);
+        return;
+      }
+      // View All → news (go to chart view)
+      if (e.target.id === 'ov-feed-all') {
+        showOvChartView(selectedChartSym || ALL_HOME_SYMBOLS[0]);
+        return;
+      }
+      // Summary card → navigate to sidebar panel
+      const summaryCard = e.target.closest('.ov-summary-card');
+      if (summaryCard && summaryCard.dataset.goto) {
+        const dest = summaryCard.dataset.goto;
+        if (dest !== 'quick') switchSite(dest);
+        return;
+      }
+      // Quick access link → navigate to sidebar panel
+      const qLink = e.target.closest('.ov-quick-link');
+      if (qLink && qLink.dataset.goto) {
+        switchSite(qLink.dataset.goto);
+        return;
+      }
+    });
+  }
+
+  // Start dashboard clock interval
+  updateOvDashboard();
+  if (!window._ovClockInterval) {
+    window._ovClockInterval = setInterval(() => {
+      const timeEl = document.getElementById('ov-time');
+      if (timeEl) {
+        const now = new Date();
+        timeEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      }
+    }, 1000);
+  }
 
   // Category tab clicks
   homePanel.querySelectorAll('.cat-tab').forEach(btn => {
@@ -9134,6 +9290,8 @@ async function fetchHomeData() {
   checkSRBreaches();
   // Smart Summary Bar refresh (v2.37)
   updateSmartSummary();
+  // Overview Dashboard refresh (v2.92)
+  updateOvDashboard();
 }
 
 // ══════════════════════════════════════════════
@@ -9245,6 +9403,373 @@ function updateSmartSummary() {
       }
     }
   } catch (_) {}
+}
+
+// ══════════════════════════════════════════════
+// OVERVIEW DASHBOARD UPDATE (v2.92)
+// ══════════════════════════════════════════════
+function updateOvDashboard() {
+  const dash = document.getElementById('ov-dashboard');
+  if (!dash || dash.style.display === 'none') return;
+
+  // ── Header clock ──
+  const now = new Date();
+  const dateEl = document.getElementById('ov-date');
+  const timeEl = document.getElementById('ov-time');
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  if (timeEl) timeEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+
+  // ── Stats row ──
+  const idxCat = HOME_CATEGORIES.find(c => c.id === 'indices');
+  const tracked = idxCat ? idxCat.symbols.length : 0;
+  const sIdx = document.getElementById('ov-s-idx');
+  if (sIdx) sIdx.textContent = String(tracked);
+
+  // Declining count
+  let decCount = 0, totalWithData = 0;
+  ALL_HOME_SYMBOLS.forEach(s => {
+    const d = lastKnownPrices[s.id];
+    if (d && d.pct != null) { totalWithData++; if (d.pct < 0) decCount++; }
+  });
+  const decPct = totalWithData ? Math.round(decCount / totalWithData * 100) : 0;
+  const sDec = document.getElementById('ov-s-dec');
+  const sDecSub = document.getElementById('ov-s-dec-sub');
+  if (sDec) sDec.textContent = `${decPct}%`;
+  if (sDecSub) sDecSub.textContent = `${decCount} of ${totalWithData}`;
+
+  // VIX
+  const vixD = lastKnownPrices['vix'] || riskPrices['vix'];
+  const sVix = document.getElementById('ov-s-vix');
+  const sVixSub = document.getElementById('ov-s-vix-sub');
+  if (sVix && vixD?.price) {
+    sVix.textContent = parseFloat(vixD.price).toFixed(2);
+    const vp = vixD.pct;
+    if (sVixSub && vp != null) sVixSub.textContent = `${vp >= 0 ? '+' : ''}${vp.toFixed(2)}%`;
+  }
+
+  // BTC Dominance (approx from crypto data)
+  const btcD = lastKnownPrices['btc'];
+  const sBtc = document.getElementById('ov-s-btc');
+  const sBtcSub = document.getElementById('ov-s-btc-sub');
+  if (sBtc && btcD?.price) {
+    sBtc.textContent = fmtPrice(btcD.price, 'crypto');
+    if (sBtcSub && btcD.pct != null) sBtcSub.textContent = `${btcD.pct >= 0 ? '+' : ''}${btcD.pct.toFixed(2)}%`;
+  }
+
+  // Alerts count
+  const alertCount = watchlistItems.filter(i => i.alertAbove || i.alertBelow).length;
+  const sAlerts = document.getElementById('ov-s-alerts');
+  if (sAlerts) sAlerts.textContent = String(alertCount);
+
+  // Events count — count badges showing "TODAY" in the econ ticker
+  const sEvents = document.getElementById('ov-s-events');
+  if (sEvents) {
+    const todayBadges = document.querySelectorAll('.econ-pill.ep-today');
+    // Pills are doubled for seamless scroll — divide by 2 for true count
+    const todayCount = Math.floor(todayBadges.length / 2);
+    sEvents.textContent = String(todayCount || '–');
+  }
+
+  // ── Global Indices table ──
+  const idxTbody = document.getElementById('ov-idx-tbody');
+  if (idxTbody) {
+    const INDEX_SYMS = [
+      { id: 'sp500',  flag: '🇺🇸' },
+      { id: 'nasdaq', flag: '🇺🇸' },
+      { id: 'dji',    flag: '🇺🇸' },
+      { id: 'dax',    flag: '🇩🇪' },
+      { id: 'ftse',   flag: '🇬🇧' },
+      { id: 'n225',   flag: '🇯🇵' },
+      { id: 'hsi',    flag: '🇭🇰' },
+      { id: 'bist',   flag: '🇹🇷' },
+    ];
+    const rows = INDEX_SYMS.map(ix => {
+      const sym = ALL_HOME_SYMBOLS.find(s => s.id === ix.id);
+      if (!sym) return '';
+      const d = lastKnownPrices[ix.id];
+      if (!d) return `<tr class="ov-idx-row" data-sym="${sym.symbol}" data-id="${sym.id}"><td>${ix.flag}</td><td>${sym.label}</td><td>–</td><td>–</td><td>–</td><td></td></tr>`;
+      const isUp = d.pct >= 0;
+      const sign = isUp ? '+' : '';
+      const cls = isUp ? 'ov-pos' : 'ov-neg';
+      return `<tr class="ov-idx-row" data-sym="${sym.symbol}" data-id="${sym.id}">
+        <td>${ix.flag}</td>
+        <td>${sym.label}</td>
+        <td style="font-weight:600">${fmtPrice(d.price, sym.fmt)}</td>
+        <td class="${cls}">${sign}${d.change?.toFixed(2) || '–'}</td>
+        <td class="${cls}">${sign}${d.pct.toFixed(2)}%</td>
+        <td><canvas class="ov-idx-spark" data-sym="${sym.symbol}" width="60" height="20"></canvas></td>
+      </tr>`;
+    }).join('');
+    idxTbody.innerHTML = rows;
+    // Draw sparklines for indices
+    idxTbody.querySelectorAll('.ov-idx-spark').forEach(cvs => {
+      const key = `${cvs.dataset.sym}|1mo|1d`;
+      const cached = chartDataCache[key];
+      if (cached && cached.length > 2) {
+        const last = cached[cached.length - 1].close;
+        const first = cached[0].close;
+        drawSparkline(cvs, cached, last >= first);
+      }
+    });
+  }
+
+  // ── Fear & Greed gauge ──
+  const fgCanvas = document.getElementById('ov-fg-canvas');
+  if (fgCanvas) {
+    const { score } = calcFearGreed();
+    drawFearGreedGauge(fgCanvas, score);
+    const fgScoreEl = document.getElementById('ov-fg-score');
+    const fgLabelEl = document.getElementById('ov-fg-label');
+    if (fgScoreEl) fgScoreEl.textContent = score;
+    if (fgLabelEl) {
+      const info = fgLabel(score);
+      fgLabelEl.textContent = info.text;
+      fgLabelEl.style.color = info.color;
+    }
+  }
+
+  // ── NYSE Breadth ──
+  const bUp = document.getElementById('ov-breadth-up');
+  const bDn = document.getElementById('ov-breadth-dn');
+  const bAdvEl = document.getElementById('ov-breadth-adv');
+  const bDecEl = document.getElementById('ov-breadth-dec');
+  if (bUp && bDn) {
+    let advC = 0, decC = 0;
+    (idxCat?.symbols || []).forEach(s => {
+      const d = lastKnownPrices[s.id];
+      if (d?.pct != null) { if (d.pct >= 0) advC++; else decC++; }
+    });
+    const total = advC + decC || 1;
+    bUp.style.width = `${(advC / total * 100).toFixed(0)}%`;
+    bDn.style.width = `${(decC / total * 100).toFixed(0)}%`;
+    if (bAdvEl) bAdvEl.textContent = `▲ ${advC}`;
+    if (bDecEl) bDecEl.textContent = `▼ ${decC}`;
+  }
+
+  // ── 52W High / Low counts ──
+  const hiEl = document.getElementById('ov-52w-hi');
+  const loEl = document.getElementById('ov-52w-lo');
+  if (hiEl && loEl) {
+    let hiCount = 0, loCount = 0;
+    ALL_HOME_SYMBOLS.forEach(s => {
+      const key = `${s.symbol}|1y|1wk`;
+      const data = chartDataCache[key];
+      if (data && data.length > 10) {
+        const closes = data.map(d => d.close);
+        const max52 = Math.max(...closes);
+        const min52 = Math.min(...closes);
+        const cur = lastKnownPrices[s.id]?.price;
+        if (cur) {
+          if (cur >= max52 * 0.98) hiCount++;
+          if (cur <= min52 * 1.02) loCount++;
+        }
+      }
+    });
+    hiEl.textContent = String(hiCount);
+    loEl.textContent = String(loCount);
+  }
+
+  // ── Top Movers ──
+  updateOvMovers();
+
+  // ── Sector Performance ──
+  updateOvSectors();
+
+  // ── Crypto Markets ──
+  updateOvCrypto();
+
+  // ── Live Market Feed ──
+  updateOvFeed();
+
+  // ── Summary Widgets data ──
+  // Macro Pulse mini
+  const pmVix = document.getElementById('ov-pm-vix');
+  const pmDxy = document.getElementById('ov-pm-dxy');
+  const pm10y = document.getElementById('ov-pm-10y');
+  const pmGold = document.getElementById('ov-pm-gold');
+  if (pmVix) {
+    const v = lastKnownPrices['vix'] || riskPrices['vix'];
+    if (v?.price) { const p = parseFloat(v.price); pmVix.textContent = p.toFixed(2); pmVix.className = 'ov-macro-val ' + (p >= 25 ? 'ov-neg' : p <= 16 ? 'ov-pos' : ''); }
+  }
+  if (pmDxy) {
+    const d = riskPrices['dxy'] || lastKnownPrices['dxy'];
+    if (d?.price) pmDxy.textContent = parseFloat(d.price).toFixed(2);
+  }
+  if (pm10y) {
+    const y = riskPrices['tnx'];
+    if (y?.price) {
+      // Yahoo ^TNX reports values ×10 (e.g. 42.5 = 4.25%)
+      const yld = parseFloat(y.price) / 10;
+      pm10y.textContent = yld.toFixed(3) + '%';
+    }
+  }
+  if (pmGold) {
+    const g = lastKnownPrices['gold'];
+    if (g?.price) { pmGold.textContent = fmtPrice(g.price, 'commodity'); pmGold.className = 'ov-macro-val ' + (g.pct >= 0 ? 'ov-pos' : 'ov-neg'); }
+  }
+
+  // Market Sentiment mini
+  const smFg = document.getElementById('ov-sm-fg');
+  const smBreadth = document.getElementById('ov-sm-breadth');
+  const smAdv = document.getElementById('ov-sm-adv');
+  const smDec = document.getElementById('ov-sm-dec');
+  if (smFg) {
+    const { score } = calcFearGreed();
+    const info = fgLabel(score);
+    smFg.textContent = `${score} — ${info.text}`;
+    smFg.style.color = info.color;
+  }
+  if (smBreadth || smAdv || smDec) {
+    let advN = 0, decN = 0;
+    ALL_HOME_SYMBOLS.forEach(s => { const d = lastKnownPrices[s.id]; if (d?.pct != null) { if (d.pct >= 0) advN++; else decN++; } });
+    const tot = advN + decN || 1;
+    if (smBreadth) smBreadth.textContent = `${Math.round(advN / tot * 100)}% advancing`;
+    if (smAdv) smAdv.textContent = `▲ ${advN}`;
+    if (smDec) smDec.textContent = `▼ ${decN}`;
+  }
+
+  // Calendar mini — next 3 upcoming events from MACRO_EVENTS if available
+  const calMini = document.getElementById('ov-cal-mini');
+  if (calMini) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    // Gather macro events from the existing econ ticker DOM (already built)
+    const pills = document.querySelectorAll('.econ-pill');
+    const upcoming = [];
+    const seen = new Set();
+    pills.forEach(p => {
+      const dateStr = p.dataset.date;
+      if (!dateStr) return;
+      const evName = p.dataset.name || p.textContent.trim();
+      const dedupKey = `${dateStr}|${evName}`;
+      if (seen.has(dedupKey)) return; // pills doubled for scroll — skip duplicates
+      seen.add(dedupKey);
+      const d = new Date(dateStr + 'T00:00:00');
+      if (d >= today && upcoming.length < 4) {
+        const diff = Math.ceil((d - today) / 86400000);
+        const when = diff === 0 ? 'TODAY' : diff === 1 ? 'Tomorrow' : `In ${diff}d`;
+        upcoming.push({ name: evName.substring(0, 24), when, isToday: diff === 0 });
+      }
+    });
+    if (upcoming.length) {
+      calMini.innerHTML = upcoming.map(e =>
+        `<div class="ov-cal-row"><span class="ov-cal-name">${e.name}</span><span class="ov-cal-when ${e.isToday ? 'ov-cal-today' : ''}">${e.when}</span></div>`
+      ).join('');
+    } else {
+      calMini.innerHTML = '<div style="color:var(--text-lo);font-size:11px">No upcoming events</div>';
+    }
+  }
+}
+
+function updateOvMovers(tab) {
+  const listEl = document.getElementById('ov-movers-list');
+  if (!listEl) return;
+  const isGainers = !tab || tab === 'gainers';
+  const sorted = ALL_HOME_SYMBOLS
+    .filter(s => lastKnownPrices[s.id]?.pct != null)
+    .sort((a, b) => isGainers
+      ? (lastKnownPrices[b.id].pct - lastKnownPrices[a.id].pct)
+      : (lastKnownPrices[a.id].pct - lastKnownPrices[b.id].pct))
+    .slice(0, 6);
+  const maxPct = Math.max(...sorted.map(s => Math.abs(lastKnownPrices[s.id].pct)), 1);
+  listEl.innerHTML = sorted.map(s => {
+    const d = lastKnownPrices[s.id];
+    const isUp = d.pct >= 0;
+    const sign = isUp ? '+' : '';
+    const barW = (Math.abs(d.pct) / maxPct * 100).toFixed(0);
+    return `<div class="ov-mover-row" data-sym="${s.symbol}" data-id="${s.id}">
+      <span class="ov-mover-name">${s.label}</span>
+      <span class="ov-mover-price">${fmtPrice(d.price, s.fmt)}</span>
+      <span class="ov-mover-pct ${isUp ? 'ov-pos' : 'ov-neg'}">${sign}${d.pct.toFixed(2)}%</span>
+      <div class="ov-mover-bar"><div class="ov-mover-bar-fill ${isUp ? 'up' : 'dn'}" style="width:${barW}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function updateOvSectors() {
+  const el = document.getElementById('ov-sectors');
+  if (!el) return;
+  const entries = SECTOR_ETFS.map(s => {
+    const key = `${s.sym}|5d|1h`;
+    const data = chartDataCache[key];
+    if (!data || data.length < 2) return { ...s, pct: null };
+    const first = data[0].close, last = data[data.length - 1].close;
+    return { ...s, pct: ((last - first) / first) * 100 };
+  }).filter(e => e.pct !== null).sort((a, b) => b.pct - a.pct);
+
+  if (!entries.length) { el.innerHTML = '<div style="color:var(--text-lo);font-size:11px;padding:8px">Loading sector data…</div>'; return; }
+  const maxPct = Math.max(...entries.map(e => Math.abs(e.pct)), 1);
+  el.innerHTML = entries.map(e => {
+    const isUp = e.pct >= 0;
+    const sign = isUp ? '+' : '';
+    const barW = (Math.abs(e.pct) / maxPct * 100).toFixed(0);
+    return `<div class="ov-sector-row">
+      <span class="ov-sector-name" style="color:${e.color}">${e.label}</span>
+      <div class="ov-sector-bar"><div class="ov-sector-bar-fill ${isUp ? 'up' : 'dn'}" style="width:${barW}%;background:${e.color}"></div></div>
+      <span class="ov-sector-pct ${isUp ? 'ov-pos' : 'ov-neg'}">${sign}${e.pct.toFixed(2)}%</span>
+    </div>`;
+  }).join('');
+}
+
+function updateOvCrypto() {
+  const el = document.getElementById('ov-crypto-list');
+  if (!el) return;
+  const cryptoCat = HOME_CATEGORIES.find(c => c.id === 'crypto');
+  if (!cryptoCat) return;
+  el.innerHTML = cryptoCat.symbols.map(s => {
+    const d = lastKnownPrices[s.id];
+    if (!d) return `<div class="ov-crypto-row" data-sym="${s.symbol}" data-id="${s.id}"><span>${s.label}</span><span>–</span><span>–</span></div>`;
+    const isUp = d.pct >= 0;
+    const sign = isUp ? '+' : '';
+    return `<div class="ov-crypto-row" data-sym="${s.symbol}" data-id="${s.id}">
+      <span class="ov-crypto-name">${s.label}</span>
+      <span class="ov-crypto-price">${fmtPrice(d.price, s.fmt)}</span>
+      <span class="ov-crypto-pct ${isUp ? 'ov-pos' : 'ov-neg'}">${sign}${d.pct.toFixed(2)}%</span>
+    </div>`;
+  }).join('');
+}
+
+function updateOvFeed() {
+  const el = document.getElementById('ov-feed-list');
+  if (!el) return;
+  if (!newsHeadlines || !newsHeadlines.length) {
+    el.innerHTML = '<div style="color:var(--text-lo);font-size:11px;padding:8px">Loading news feed…</div>';
+    return;
+  }
+  el.innerHTML = newsHeadlines.slice(0, 6).map(n => {
+    const ago = _timeAgo(new Date(n.time));
+    const src = n.source || newsSource(n.link);
+    return `<div class="ov-feed-item">
+      <span class="ov-feed-time">${ago}</span>
+      <span class="ov-feed-text">${n.title}</span>
+      <span class="ov-feed-src">${src}</span>
+    </div>`;
+  }).join('');
+}
+
+function _timeAgo(date) {
+  const s = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+// ── Dashboard ↔ Chart view navigation ──
+function showOvChartView(sym) {
+  const dash = document.getElementById('ov-dashboard');
+  const chart = document.getElementById('ov-chart-view');
+  if (dash) dash.style.display = 'none';
+  if (chart) { chart.style.display = 'flex'; chart.classList.add('active'); }
+  // Delay chart selection so canvas gets dimensions after layout reflow
+  if (sym) requestAnimationFrame(() => selectMainChartSym(sym));
+}
+
+function showOvDashboard() {
+  const dash = document.getElementById('ov-dashboard');
+  const chart = document.getElementById('ov-chart-view');
+  if (chart) { chart.style.display = 'none'; chart.classList.remove('active'); }
+  if (dash) dash.style.display = '';
+  updateOvDashboard();
 }
 
 function updateHomeCard(sym, price, change, pct, extPrice = null, extPct = null, extType = null, dayLow = null, dayHigh = null) {
@@ -15671,6 +16196,8 @@ function switchSite(siteId) {
   if (siteId === 'overview') {
     hideAllPanels();
     homePanel.classList.add('active');
+    // Always show dashboard when navigating to Overview (not chart view)
+    showOvDashboard();
     urlBar.dataset.site = 'overview';
     urlBadgeText.textContent = '⊞';
     urlText.textContent = 'Market Overview';
@@ -15893,15 +16420,20 @@ btnRefresh.addEventListener('click', () => {
   if (currentSite === 'scanner')   { loadScannerPanel(); return; }
   if (currentSite === 'calendar')  { return; }
   if (currentSite === 'insider')   { INSIDER_WATCH_SYMBOLS.forEach(sym => delete _extCache[`fh_insider_${sym}`]); loadInsiderFlowsPanel(); return; }
+  if (currentSite === 'dna')       { loadMarketDNA(); return; }
   // External webview sites
+  const wv = getWV(currentSite);
+  if (!wv) return;
   showLoading();
-  getWV(currentSite).reload();
+  wv.reload();
 });
 
 btnHome.addEventListener('click', () => {
   if (currentSite === 'overview') return;
+  const wv = getWV(currentSite);
+  if (!wv) return; // custom panels have no webview
   showLoading();
-  getWV(currentSite).loadURL(SITES[currentSite].url);
+  wv.loadURL(SITES[currentSite].url);
 });
 
 // ── Zoom ──────────────────────────────────────
@@ -16207,7 +16739,7 @@ function buildEconTicker() {
     const days     = ev.daysUntil;
     const dayStr   = days <= 0 ? 'TODAY' : `${days}d`;
     const todayCls = days <= 0 ? ' ep-today' : '';
-    return `<span class="econ-pill ${cls}${todayCls}" title="${ev.cat} · ${ev.date}">📅 ${ev.name} · ${dayStr}</span>`;
+    return `<span class="econ-pill ${cls}${todayCls}" data-date="${ev.date}" data-name="${ev.name}" title="${ev.cat} · ${ev.date}">📅 ${ev.name} · ${dayStr}</span>`;
   };
 
   // Double pills for seamless infinite-scroll loop
@@ -16710,6 +17242,22 @@ function _updateFloatIfOpen(sym, price, pct) {
 // INIT
 // ══════════════════════════════════════════════
 (function init() {
+  // V5 Glassmorphism: Noise overlay + Pink orb
+  (function injectV5Overlays() {
+    if (!document.querySelector('.noise-overlay')) {
+      const noise = document.createElement('div');
+      noise.className = 'noise-overlay';
+      document.body.appendChild(noise);
+    }
+    // Pink orb (5th orb — can't use pseudo-elements since body/layout already have 2 each)
+    if (!document.getElementById('v5-pink-orb')) {
+      const pinkOrb = document.createElement('div');
+      pinkOrb.id = 'v5-pink-orb';
+      pinkOrb.style.cssText = 'position:fixed;bottom:-100px;right:30%;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(236,72,153,0.2) 0%,rgba(236,72,153,0.04) 40%,transparent 65%);filter:blur(45px);pointer-events:none;z-index:0;';
+      document.body.appendChild(pinkOrb);
+    }
+  })();
+
   // Build panel structures
   buildHomePanel();
   checkDailyStreak();   // streak badge in tab bar
